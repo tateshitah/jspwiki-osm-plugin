@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Marker Expample</title>
+</head>
+<body>
+<div id="map" style="width:400px; height: 400px;"></div>
+<script src="https://openlayers.org/en/v4.2.0/build/ol.js"></script>
+ 
+<script type="text/javascript">
+function convertCoordinate(longitude, latitude) {
+  return ol.proj.transform([longitude, latitude], "EPSG:4326","EPSG:900913");
+}
+ 
+var markerStyleDefault = new ol.style.Style({
+  image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ {
+    anchor: [0.5, 1],
+    anchorXUnits: 'fraction',
+    anchorYUnits: 'fraction',
+    opacity: 0.75,
+    src: 'map-marker-red-th.png'
+  })
+});
+ 
+var markerFeatureA = new ol.Feature({
+  geometry: new ol.geom.Point(convertCoordinate(139.619895,35.707214))
+});
+ 
+var markerSource = new ol.source.Vector({
+  features: [markerFeatureA]
+});
+ 
+var markerLayer = new ol.layer.Vector({
+  source: markerSource,
+  style: markerStyleDefault
+});
+ 
+// Open Street Map Layer
+var osmLayer = new ol.layer.Tile({
+  source: new ol.source.OSM()
+});
+ 
+var map = new ol.Map({
+  layers: [ osmLayer, markerLayer ],
+  target: document.getElementById('map'),
+  view: new ol.View({
+    center: convertCoordinate(139.619895,35.707214),
+    zoom: 17
+  })
+});
+ 
+</script>
+</body>
+</html>
