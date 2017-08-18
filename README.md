@@ -33,7 +33,7 @@ Heres an example of how the above image was created:
       height='300'
 }]
 
-* usage example: Location
-you can check source code here(info). I will upload it on GitHub later.
-
 # Known Issues
+
+# Notices
+This software uses jspwiki library developped under apache license 2.0. http://jspwiki.apache.org/ 
