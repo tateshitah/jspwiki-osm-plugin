@@ -90,9 +90,9 @@ public class OSM implements WikiPlugin {
 					if (tempLocation != null) {
 						locations.add(tempLocation);
 					}
-					result += wikipage.getName() + " exists!<br>";
+					// result += wikipage.getName() + " exists!<br>";
 				} else {
-					result += pages[i] + "does not exist!<br>";
+					// result += pages[i] + "does not exist!<br>";
 				}
 			}
 		}
