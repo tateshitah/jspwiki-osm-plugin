@@ -65,7 +65,7 @@ public class OSM implements WikiPlugin {
 
 		int height = 600;
 		if (params.get("height") != null)
-			width = Integer.parseInt((String) params.get("height"));
+			height = Integer.parseInt((String) params.get("height"));
 
 		// 'pagename1/pagename2/pagename3'
 		String pagesString = null;
