@@ -23,9 +23,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 package org.braincopy.jspwiki.plugin;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.TreeSet;
 
 import org.apache.wiki.WikiContext;
 import org.apache.wiki.WikiEngine;
@@ -33,6 +33,7 @@ import org.apache.wiki.WikiPage;
 import org.apache.wiki.api.exceptions.PluginException;
 import org.apache.wiki.api.plugin.WikiPlugin;
 import org.apache.wiki.parser.PluginContent;
+import org.braincopy.Information;
 import org.braincopy.Location;
 
 /**
@@ -55,48 +56,39 @@ public class OSM implements WikiPlugin {
 		if (params.get("lon") != null)
 			longtitude = Double.parseDouble((String) params.get("lon"));
 
-		int zoom = 6;
+		int zoom = 12;
 		if (params.get("zoom") != null)
 			zoom = Integer.parseInt((String) params.get("zoom"));
 
-		int width = 800;
+		int width = 400;
 		if (params.get("width") != null)
 			width = Integer.parseInt((String) params.get("width"));
 
-		int height = 600;
+		int height = 300;
 		if (params.get("height") != null)
 			height = Integer.parseInt((String) params.get("height"));
 
 		// 'pagename1/pagename2/pagename3'
-		String pagesString = null;
 		String[] pages = null;
 		if (params.get("pages") != null) {
-			pagesString = params.get("pages");
-			pages = pagesString.split("/");
+			pages = params.get("pages").split("/");
 		}
 
-		ArrayList<Location> locations = new ArrayList<Location>();
-		if (pages != null) {
-			WikiEngine engine = context.getEngine();
-			WikiPage wikipage = null;
-			String pureText = null;
-			Location tempLocation = null;
+		// ArrayList<Location> locations = new ArrayList<Location>();
+		TreeSet<Information> geoInfoSet = new TreeSet<Information>();
 
-			for (int i = 0; i < pages.length; i++) {
-				if (engine.pageExists(pages[i])) {
-					wikipage = engine.getPage(pages[i]);
-					pureText = engine.getPureText(wikipage);
-					tempLocation = getLocation(pureText, context);
-					if (tempLocation != null) {
-						locations.add(tempLocation);
-					}
-					// result += wikipage.getName() + " exists!<br>";
-				} else {
-					// result += pages[i] + "does not exist!<br>";
-				}
-			}
-		}
-
+		WikiEngine engine = context.getEngine();
+		getLocations(geoInfoSet, engine, pages, context);
+		/*
+		 * if (pages != null) { WikiPage wikipage = null; String pureText = null;
+		 * Location tempLocation = null;
+		 * 
+		 * for (int i = 0; i < pages.length; i++) { if (engine.pageExists(pages[i])) {
+		 * wikipage = engine.getPage(pages[i]); pureText = engine.getPureText(wikipage);
+		 * tempLocation = getLocation(locations, pureText, context); if (tempLocation !=
+		 * null) { locations.add(tempLocation); } // result += wikipage.getName() +
+		 * " exists!<br>"; } else { // result += pages[i] + "does not exist!<br>"; } } }
+		 */
 		result += "  <div id=\"map\" style=\"width: " + width + "px; height: " + height + "px;\"></div>\n";
 		result += "<script src=\"https://openlayers.org/en/v4.2.0/build/ol.js\"></script>\n";
 		result += "<script>\n";
@@ -113,11 +105,11 @@ public class OSM implements WikiPlugin {
 
 		result += "var marker_array = [];\n";
 
-		Iterator<Location> ite = locations.iterator();
+		Iterator<Information> ite = geoInfoSet.iterator();
 		Location tempLocation = null;
 		int cnt = 1;
 		while (ite.hasNext()) {
-			tempLocation = (Location) ite.next();
+			tempLocation = ((Information) ite.next()).getLocation();
 			result += "\tvar marker_" + cnt + "= new ol.Feature({\n";
 			result += "geometry : new ol.geom.Point(convertCoordinate(" + tempLocation.getLon() + ","
 					+ tempLocation.getLat() + "))});\n";
@@ -150,33 +142,77 @@ public class OSM implements WikiPlugin {
 		return result;
 	}
 
-	protected Location getLocation(String pureText, WikiContext context) throws PluginException {
-		Location result = null;
+	/**
+	 * 
+	 * @param geoInfoSet
+	 * @param engine
+	 * @param pages
+	 * @param context
+	 * @throws PluginException
+	 */
+	protected void getLocations(TreeSet<Information> geoInfoSet, WikiEngine engine, String[] pages, WikiContext context)
+			throws PluginException {
+		if (pages != null) {
+			WikiPage wikipage = null;
+			String pureText = null;
 
-		String pluginText = "";
-		PluginContent pluginContent = null;
-		double lat = Double.MIN_VALUE, lon = Double.MIN_VALUE;
-		if (pureText.contains("[{OSM")) {
-			pluginText = pureText.substring(pureText.indexOf("[{OSM"));
-			pluginText = pluginText.substring(0, pluginText.indexOf("}]") + 3);
-			try {
-				pluginContent = PluginContent.parsePluginLine(context, pluginText, 0);
-				if (pluginContent.getParameter("lat") != null) {
-					lat = Double.parseDouble(pluginContent.getParameter("lat"));
+			for (int i = 0; i < pages.length; i++) {
+				if (engine.pageExists(pages[i]) && !geoInfoSet.contains(new Information(pages[i]))) {
+					wikipage = engine.getPage(pages[i]);
+					pureText = engine.getPureText(wikipage);
+					String pluginText = "";
+					PluginContent pluginContent = null;
+					double lat = Double.MIN_VALUE, lon = Double.MIN_VALUE;
+					String[] sub_pages = null;
+					if (pureText.contains("[{OSM")) {
+						pluginText = pureText.substring(pureText.indexOf("[{OSM"));
+						pluginText = pluginText.substring(0, pluginText.indexOf("}]") + 3);
+						try {
+							pluginContent = PluginContent.parsePluginLine(context, pluginText, 0);
+							if (pluginContent.getParameter("pages") != null) {
+								sub_pages = pluginContent.getParameter("pages").split("/");
+								getLocations(geoInfoSet, engine, sub_pages, context);
+							}
+							if (pluginContent.getParameter("lat") != null) {
+								lat = Double.parseDouble(pluginContent.getParameter("lat"));
+							}
+							if (pluginContent.getParameter("lng") != null) {
+								lon = Double.parseDouble(pluginContent.getParameter("lng"));
+							}
+							if (pluginContent.getParameter("lon") != null) {
+								lon = Double.parseDouble(pluginContent.getParameter("lon"));
+							}
+							geoInfoSet.add(new Information(pages[i], new Location(lat, lon)));
+						} catch (PluginException e) {
+							throw e;
+						}
+					}
 				}
-				if (pluginContent.getParameter("lng") != null) {
-					lon = Double.parseDouble(pluginContent.getParameter("lng"));
-				}
-				if (pluginContent.getParameter("lon") != null) {
-					lon = Double.parseDouble(pluginContent.getParameter("lon"));
-				}
-				result = new Location(lat, lon);
-			} catch (PluginException e) {
-				throw e;
 			}
 		}
-
-		return result;
 	}
-
+	/*
+	 * protected Location getLocation(ArrayList<Location> locations, String
+	 * pureText, WikiContext context) throws PluginException { Location result =
+	 * null;
+	 * 
+	 * String pluginText = ""; PluginContent pluginContent = null; double lat =
+	 * Double.MIN_VALUE, lon = Double.MIN_VALUE; String[] pages = null; if
+	 * (pureText.contains("[{OSM")) { pluginText =
+	 * pureText.substring(pureText.indexOf("[{OSM")); pluginText =
+	 * pluginText.substring(0, pluginText.indexOf("}]") + 3); try { pluginContent =
+	 * PluginContent.parsePluginLine(context, pluginText, 0); if
+	 * (pluginContent.getParameter("pages") != null) { pages =
+	 * pluginContent.getParameter("pages").split("/"); }
+	 * 
+	 * if (pluginContent.getParameter("lat") != null) { lat =
+	 * Double.parseDouble(pluginContent.getParameter("lat")); } if
+	 * (pluginContent.getParameter("lng") != null) { lon =
+	 * Double.parseDouble(pluginContent.getParameter("lng")); } if
+	 * (pluginContent.getParameter("lon") != null) { lon =
+	 * Double.parseDouble(pluginContent.getParameter("lon")); } result = new
+	 * Location(lat, lon); } catch (PluginException e) { throw e; } }
+	 * 
+	 * return result; }
+	 */
 }
