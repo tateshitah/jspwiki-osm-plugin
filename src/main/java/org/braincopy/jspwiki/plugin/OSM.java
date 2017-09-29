@@ -95,43 +95,58 @@ public class OSM implements WikiPlugin {
 		result += "function convertCoordinate(longitude, latitude) {\n";
 		result += "return ol.proj.transform([ longitude,latitude ], \"EPSG:4326\",\"EPSG:900913\");}\n";
 
-		result += "var markerStyleDefault = new ol.style.Style({\n";
-		result += "image : new ol.style.Icon(/** @type {olx.style.IconOptions} */{\n";
-		result += "anchor : [ 0.5, 1 ],\n";
-		result += "anchorXUnits : 'fraction',\n";
-		result += "anchorYUnits : 'fraction',\n";
-		result += "opacity : 0.75,\n";
-		result += "src : 'https://braincopy.org/WebContent/assets/map-marker-red-th.png'})});\n";
+		result += "function pointStyleFunction(feature, resolution) {\n";
+		result += "\treturn new ol.style.Style({\n";
+		result += "\timage: new ol.style.Circle({\n";
+		result += "\t\tradius: 10,\n";
+		result += "\t\tfill: new ol.style.Fill({color: 'rgba(255, 255, 0, 0.1)'}),\n";
+		result += "\t\tstroke: new ol.style.Stroke({color: 'blue', width: 1})}),\n";
+		result += "\t\ttext: new ol.style.Text({\n";
+		result += "\t\t\ttextAlign: 'center',\n";
+		result += "\t\t\ttextBaseline: 'middle',\n";
+		result += "\t\t\tfont: 'Arial',\n";
+		result += "\t\t\ttext: feature.get('name'),\n";
+		result += "\t\t\tfill: new ol.style.Fill({color: 'yellow'}),\n";
+		result += "\t\t\tstroke: new ol.style.Stroke({color: 'blue', width: 3}),\n";
+		result += "\t\t\toffsetX: 0,\n";
+		result += "\t\t\toffsetY: 0,\n";
+		result += "\t\t\trotation: 0})});}\n";
 
 		result += "var marker_array = [];\n";
 
-		Iterator<Information> ite = geoInfoSet.iterator();
-		Location tempLocation = null;
-		int cnt = 1;
-		while (ite.hasNext()) {
-			tempLocation = ((Information) ite.next()).getLocation();
-			result += "\tvar marker_" + cnt + "= new ol.Feature({\n";
-			result += "geometry : new ol.geom.Point(convertCoordinate(" + tempLocation.getLon() + ","
-					+ tempLocation.getLat() + "))});\n";
-			result += "\tmarker_array.push(marker_" + cnt + ");\n";
-			cnt++;
+		if (pages != null) {
+			Iterator<Information> ite = geoInfoSet.iterator();
+			Information tempInfo = null;
+			Location tempLocation = null;
+			int cnt = 1;
+			while (ite.hasNext()) {
+				tempInfo = (Information) ite.next();
+				tempLocation = tempInfo.getLocation();
+				result += "\tvar marker_" + cnt + "= new ol.Feature({\n";
+				result += "\t\tgeometry : new ol.geom.Point(convertCoordinate(" + tempLocation.getLon() + ","
+						+ tempLocation.getLat() + ")),\n";
+				result += "\t\tname: '" + tempInfo.getName() + "'});\n";
+				result += "\tmarker_array.push(marker_" + cnt + ");\n";
+				cnt++;
+			}
+		} else {
+			result += "\tvar marker = new ol.Feature({\n";
+			result += "\t\tgeometry : new ol.geom.Point(convertCoordinate(" + longtitude + "," + latitude + ")),\n";
+			result += "\t\tname: '" + context.getPage().getName() + "'});\n";
+			result += "\tmarker_array.push(marker);\n";
 		}
-		result += "var marker = new ol.Feature({\n";
-		result += "geometry : new ol.geom.Point(convertCoordinate(" + longtitude + "," + latitude + "))});\n";
-		result += "marker_array.push(marker);";
-
 		result += "var markerSource = new ol.source.Vector({\n";
 		result += "features : marker_array});\n";
 
-		result += "var markerLayer = new ol.layer.Vector({\n";
+		result += "var rabelLayer = new ol.layer.Vector({\n";
 		result += "source : markerSource,\n";
-		result += "style : markerStyleDefault});\n";
+		result += "style : pointStyleFunction});\n";
 
 		result += "var osmLayer = new ol.layer.Tile({\n";
 		result += "source : new ol.source.OSM()});\n";
 
 		result += "var map = new ol.Map({\n";
-		result += "layers : [ osmLayer, markerLayer ],\n";
+		result += "layers : [ osmLayer, rabelLayer ],\n";
 		result += "target : document.getElementById('map'),\n";
 		result += "view : new ol.View({\n";
 		result += "center : convertCoordinate(" + longtitude + "," + latitude + "),\n";
@@ -172,17 +187,18 @@ public class OSM implements WikiPlugin {
 							if (pluginContent.getParameter("pages") != null) {
 								sub_pages = pluginContent.getParameter("pages").split("/");
 								getLocations(geoInfoSet, engine, sub_pages, context);
+							} else {
+								if (pluginContent.getParameter("lat") != null) {
+									lat = Double.parseDouble(pluginContent.getParameter("lat"));
+								}
+								if (pluginContent.getParameter("lng") != null) {
+									lon = Double.parseDouble(pluginContent.getParameter("lng"));
+								}
+								if (pluginContent.getParameter("lon") != null) {
+									lon = Double.parseDouble(pluginContent.getParameter("lon"));
+								}
+								geoInfoSet.add(new Information(pages[i], new Location(lat, lon)));
 							}
-							if (pluginContent.getParameter("lat") != null) {
-								lat = Double.parseDouble(pluginContent.getParameter("lat"));
-							}
-							if (pluginContent.getParameter("lng") != null) {
-								lon = Double.parseDouble(pluginContent.getParameter("lng"));
-							}
-							if (pluginContent.getParameter("lon") != null) {
-								lon = Double.parseDouble(pluginContent.getParameter("lon"));
-							}
-							geoInfoSet.add(new Information(pages[i], new Location(lat, lon)));
 						} catch (PluginException e) {
 							throw e;
 						}

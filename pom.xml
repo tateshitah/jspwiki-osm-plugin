@@ -4,7 +4,7 @@
 	<groupId>org.braincopy.jspwiki.plugin</groupId>
 	<artifactId>osm-plugin</artifactId>
 	<packaging>jar</packaging>
-	<version>0.4.3</version>
+	<version>0.5.6</version>
 	<name>jspwiki-osm-plugin</name>
 	<dependencies>
 		<dependency>
