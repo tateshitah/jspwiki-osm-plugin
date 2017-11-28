@@ -37,6 +37,7 @@ import org.braincopy.Information;
 import org.braincopy.Location;
 
 /**
+ * Open Street Map Plugin for JSPWiki
  * 
  * @author Hiroaki Tateshita
  * 
@@ -98,21 +99,21 @@ public class OSM implements WikiPlugin {
 		result += "function pointStyleFunction(feature, resolution) {\n";
 		result += "\treturn new ol.style.Style({\n";
 		result += "\timage: new ol.style.Circle({\n";
-		result += "\t\tradius: 10,\n";
+		result += "\t\tradius: 20,\n";
 		result += "\t\tfill: new ol.style.Fill({color: 'rgba(255, 255, 0, 0.1)'}),\n";
-		result += "\t\tstroke: new ol.style.Stroke({color: 'blue', width: 1})}),\n";
+		result += "\t\tstroke: new ol.style.Stroke({color: 'blue', width: 3})}),\n";
 		result += "\t\ttext: new ol.style.Text({\n";
 		result += "\t\t\ttextAlign: 'center',\n";
 		result += "\t\t\ttextBaseline: 'middle',\n";
 		result += "\t\t\tfont: 'Arial',\n";
 		result += "\t\t\ttext: feature.get('name'),\n";
 		result += "\t\t\tfill: new ol.style.Fill({color: 'yellow'}),\n";
-		result += "\t\t\tstroke: new ol.style.Stroke({color: 'blue', width: 3}),\n";
+		result += "\t\t\tstroke: new ol.style.Stroke({color: 'blue', width: 5}),\n";
 		result += "\t\t\toffsetX: 0,\n";
 		result += "\t\t\toffsetY: 0,\n";
 		result += "\t\t\trotation: 0})});}\n";
 
-		result += "var marker_array = [];\n";
+		result += "\tvar marker_array = [];\n";
 
 		if (pages != null) {
 			Iterator<Information> ite = geoInfoSet.iterator();
@@ -135,22 +136,29 @@ public class OSM implements WikiPlugin {
 			result += "\t\tname: '" + context.getPage().getName() + "'});\n";
 			result += "\tmarker_array.push(marker);\n";
 		}
-		result += "var markerSource = new ol.source.Vector({\n";
-		result += "features : marker_array});\n";
+		result += "\tvar markerSource = new ol.source.Vector({\n";
+		result += "\t\tfeatures : marker_array});\n";
 
-		result += "var rabelLayer = new ol.layer.Vector({\n";
-		result += "source : markerSource,\n";
-		result += "style : pointStyleFunction});\n";
+		result += "\tvar rabelLayer = new ol.layer.Vector({\n";
+		result += "\t\tsource : markerSource,\n";
+		result += "\t\tstyle : pointStyleFunction});\n";
 
-		result += "var osmLayer = new ol.layer.Tile({\n";
-		result += "source : new ol.source.OSM()});\n";
+		result += "\tvar osmLayer = new ol.layer.Tile({\n";
+		result += "\t\tsource : new ol.source.OSM()});\n";
 
-		result += "var map = new ol.Map({\n";
-		result += "layers : [ osmLayer, rabelLayer ],\n";
-		result += "target : document.getElementById('map'),\n";
-		result += "view : new ol.View({\n";
-		result += "center : convertCoordinate(" + longtitude + "," + latitude + "),\n";
-		result += "zoom : " + zoom + "})});\n";
+		result += "\tvar map = new ol.Map({\n";
+		result += "\t\tlayers : [ osmLayer, rabelLayer ],\n";
+		result += "\t\ttarget : document.getElementById('map'),\n";
+		result += "\t\tview : new ol.View({\n";
+		result += "\t\t\tcenter : convertCoordinate(" + longtitude + "," + latitude + "),\n";
+		result += "\t\t\tzoom : " + zoom + "})});\n";
+
+		result += "\tvar select = new ol.interaction.Select();\n";
+		result += "\tmap.addInteraction(select);\n";
+		result += "\tselect.on('select',function(e){\n";
+		result += "\t\tif(e.target.getFeatures().getLength()>0){\n";
+		result += "\t\t\tvar pagename = e.target.getFeatures().item(0).get('name');\n";
+		result += "\t\t\twindow.location.href='Wiki.jsp?page='+pagename;\n\t\t}\n\t});\n";
 
 		result += "</script>\n";
 
