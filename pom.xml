@@ -4,7 +4,7 @@
 	<groupId>org.braincopy.jspwiki.plugin</groupId>
 	<artifactId>osm-plugin</artifactId>
 	<packaging>jar</packaging>
-	<version>0.6.5</version>
+	<version>0.6.7</version>
 	<name>jspwiki-osm-plugin</name>
 	<dependencies>
 		<dependency>
@@ -23,9 +23,9 @@
 		<dependency>
 			<groupId>org.braincopy</groupId>
 			<artifactId>braincopy</artifactId>
-			<version>0.6.3</version>
+			<version>0.7.3</version>
 			<scope>system</scope>
-			<systemPath>${basedir}/lib/braincopy-0.6.3.jar</systemPath>
+			<systemPath>${basedir}/lib/braincopy-0.7.3.jar</systemPath>
 		</dependency>
 	</dependencies>
 </project>
