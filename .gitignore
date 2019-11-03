@@ -26,3 +26,5 @@ target/maven-status/maven-compiler-plugin/compile/default-compile
 target/maven-status/maven-compiler-plugin/testCompile/default-testCompile
 target/maven-archiver
 target
+.settings/
+.vscode/

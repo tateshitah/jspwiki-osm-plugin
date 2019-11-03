@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2011-2017 Hiroaki Tateshita
+Copyright (c) 2011-2019 Hiroaki Tateshita
 
 Permission is hereby granted, free of charge, to any person obtaining a copy 
 of this software and associated documentation files (the "Software"), to deal
@@ -44,6 +44,8 @@ import org.braincopy.Location;
  */
 public class OSM implements WikiPlugin {
 
+	final static String OPENLAYER_JS_URL="https://openlayers.org/en/v4.6.5/build/ol.js";
+
 	public String execute(WikiContext context, Map<String, String> params) throws PluginException {
 		String result = "";
 
@@ -80,18 +82,9 @@ public class OSM implements WikiPlugin {
 
 		WikiEngine engine = context.getEngine();
 		getLocations(geoInfoSet, engine, pages, context);
-		/*
-		 * if (pages != null) { WikiPage wikipage = null; String pureText = null;
-		 * Location tempLocation = null;
-		 * 
-		 * for (int i = 0; i < pages.length; i++) { if (engine.pageExists(pages[i])) {
-		 * wikipage = engine.getPage(pages[i]); pureText = engine.getPureText(wikipage);
-		 * tempLocation = getLocation(locations, pureText, context); if (tempLocation !=
-		 * null) { locations.add(tempLocation); } // result += wikipage.getName() +
-		 * " exists!<br>"; } else { // result += pages[i] + "does not exist!<br>"; } } }
-		 */
+
 		result += "  <div id=\"map\" style=\"width: " + width + "px; height: " + height + "px;\"></div>\n";
-		result += "<script src=\"https://openlayers.org/en/v4.2.0/build/ol.js\"></script>\n";
+		result += "<script src=\"" + OPENLAYER_JS_URL + "\"></script>\n";
 		result += "<script>\n";
 		result += "function convertCoordinate(longitude, latitude) {\n";
 		result += "return ol.proj.transform([ longitude,latitude ], \"EPSG:4326\",\"EPSG:900913\");}\n";
@@ -166,7 +159,7 @@ public class OSM implements WikiPlugin {
 	}
 
 	/**
-	 * 
+	 * geoInfoSet will be updated by adding location information searched recursively from the pages which include OSM plugin.
 	 * @param geoInfoSet
 	 * @param engine
 	 * @param pages
@@ -194,7 +187,10 @@ public class OSM implements WikiPlugin {
 							pluginContent = PluginContent.parsePluginLine(context, pluginText, 0);
 							if (pluginContent.getParameter("pages") != null) {
 								sub_pages = pluginContent.getParameter("pages").split("/");
+								
+								//Recursive point!
 								getLocations(geoInfoSet, engine, sub_pages, context);
+								
 							} else {
 								if (pluginContent.getParameter("lat") != null) {
 									lat = Double.parseDouble(pluginContent.getParameter("lat"));
@@ -215,28 +211,4 @@ public class OSM implements WikiPlugin {
 			}
 		}
 	}
-	/*
-	 * protected Location getLocation(ArrayList<Location> locations, String
-	 * pureText, WikiContext context) throws PluginException { Location result =
-	 * null;
-	 * 
-	 * String pluginText = ""; PluginContent pluginContent = null; double lat =
-	 * Double.MIN_VALUE, lon = Double.MIN_VALUE; String[] pages = null; if
-	 * (pureText.contains("[{OSM")) { pluginText =
-	 * pureText.substring(pureText.indexOf("[{OSM")); pluginText =
-	 * pluginText.substring(0, pluginText.indexOf("}]") + 3); try { pluginContent =
-	 * PluginContent.parsePluginLine(context, pluginText, 0); if
-	 * (pluginContent.getParameter("pages") != null) { pages =
-	 * pluginContent.getParameter("pages").split("/"); }
-	 * 
-	 * if (pluginContent.getParameter("lat") != null) { lat =
-	 * Double.parseDouble(pluginContent.getParameter("lat")); } if
-	 * (pluginContent.getParameter("lng") != null) { lon =
-	 * Double.parseDouble(pluginContent.getParameter("lng")); } if
-	 * (pluginContent.getParameter("lon") != null) { lon =
-	 * Double.parseDouble(pluginContent.getParameter("lon")); } result = new
-	 * Location(lat, lon); } catch (PluginException e) { throw e; } }
-	 * 
-	 * return result; }
-	 */
 }
