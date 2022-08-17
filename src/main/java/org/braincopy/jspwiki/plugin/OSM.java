@@ -30,8 +30,12 @@ import java.util.TreeSet;
 import org.apache.wiki.WikiContext;
 import org.apache.wiki.WikiEngine;
 import org.apache.wiki.WikiPage;
+import org.apache.wiki.api.core.Context;
 import org.apache.wiki.api.exceptions.PluginException;
+import org.apache.wiki.api.exceptions.ProviderException;
+import org.apache.wiki.api.plugin.Plugin;
 import org.apache.wiki.api.plugin.WikiPlugin;
+import org.apache.wiki.pages.PageManager;
 import org.apache.wiki.parser.PluginContent;
 import org.braincopy.Information;
 import org.braincopy.Location;
@@ -42,11 +46,12 @@ import org.braincopy.Location;
  * @author Hiroaki Tateshita
  * 
  */
-public class OSM implements WikiPlugin {
+public class OSM implements Plugin {
 
 	final static String OPENLAYER_JS_URL="https://openlayers.org/en/v4.6.5/build/ol.js";
 
-	public String execute(WikiContext context, Map<String, String> params) throws PluginException {
+	@Override
+	public String execute(Context context, Map<String, String> params) throws PluginException {
 		String result = "";
 
 		double latitude = 35.684444;
@@ -80,8 +85,13 @@ public class OSM implements WikiPlugin {
 		// ArrayList<Location> locations = new ArrayList<Location>();
 		TreeSet<Information> geoInfoSet = new TreeSet<Information>();
 
-		WikiEngine engine = context.getEngine();
-		getLocations(geoInfoSet, engine, pages, context);
+		WikiEngine engine = (WikiEngine) context.getEngine();
+		try {
+			getLocations(geoInfoSet, (WikiEngine)engine, pages, (WikiContext)context);
+		} catch (NumberFormatException | ProviderException e) {
+			result += "something happens"+e.getLocalizedMessage();
+			e.printStackTrace();
+		}
 
 		result += "  <div id=\"map\" style=\"width: " + width + "px; height: " + height + "px;\"></div>\n";
 		result += "<script src=\"" + OPENLAYER_JS_URL + "\"></script>\n";
@@ -165,17 +175,21 @@ public class OSM implements WikiPlugin {
 	 * @param pages
 	 * @param context
 	 * @throws PluginException
+	 * @throws ProviderException
+	 * @throws NumberFormatException
 	 */
 	protected void getLocations(TreeSet<Information> geoInfoSet, WikiEngine engine, String[] pages, WikiContext context)
-			throws PluginException {
+			throws PluginException, NumberFormatException, ProviderException {
 		if (pages != null) {
 			WikiPage wikipage = null;
 			String pureText = null;
-
+			PageManager pageManager = engine.getManager(PageManager.class);
+			
+			
 			for (int i = 0; i < pages.length; i++) {
-				if (engine.pageExists(pages[i]) && !geoInfoSet.contains(new Information(pages[i]))) {
-					wikipage = engine.getPage(pages[i]);
-					pureText = engine.getPureText(wikipage);
+				if (pageManager.pageExists(pages[i]) && !geoInfoSet.contains(new Information(pages[i]))) {
+					wikipage = (WikiPage) pageManager.getPage(pages[i]);
+					pureText = pageManager.getPureText(wikipage);
 					String pluginText = "";
 					PluginContent pluginContent = null;
 					double lat = Double.MIN_VALUE, lon = Double.MIN_VALUE;
@@ -211,4 +225,6 @@ public class OSM implements WikiPlugin {
 			}
 		}
 	}
+
+
 }
